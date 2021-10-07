@@ -8,7 +8,7 @@ from AsosArrayParams import colors
 
 
 class Asos(object):
-    def loadList(self, gender: int, brand: str, color: str, priceLow: int, priceHigh: int, size: int):
+    def loadList(self, gender: int, brand: str, color: str, priceLow: int, priceHigh: int, size: float):
         if (brand == 'adidas'):
             sizes = AsosArrayParams.adidasSizes
         else:

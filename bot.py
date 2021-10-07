@@ -1,20 +1,15 @@
 import telebot
-
-import UserClass
-from UserClass import User
-import SneakerClass
+from databaseModel import Database
 import configurate
 from telebot import types
-import MainController
 import FarfetchArrayParams
-import MainController
+from MainController import MainController
 client = telebot.TeleBot(configurate.config['token'])
 
 
 @client.message_handler(commands=['start'])
 def start(message):
-    global Client
-    Client = User()
+    Database.addUser(self=Database,id=message.chat.id)
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     gender = types.KeyboardButton('🙎‍♂/️🙍‍♀ Пол')
     brand = types.KeyboardButton('™️ Бренд')
@@ -29,8 +24,8 @@ def start(message):
 def selectColor(message):
     if message.text == '🔍 Поиск':
         client.send_message(message.chat.id, 'Выполняю поиск ⏳')
-        SneakerList = MainController.MainController.getSneakerList(MainController, Client.gender, Client.brand, Client.color, Client.priceLow, Client.priceHigh, Client.size)
-        if (SneakerList):
+        SneakerList = MainController.getSneakerList(self=MainController, id=message.chat.id)
+        if (len(SneakerList)):
             client.send_message(message.chat.id,'К сожалению ничего не наеденно 😔'+'\n'+'попробуйте изменить парметры поиска')
         for s in SneakerList:
             client.send_photo(message.chat.id, photo=s.imgUrl, caption=s.name+'\n'+s.price+'\n'+s.url)
@@ -46,7 +41,7 @@ def selectColor(message):
         blue = types.InlineKeyboardButton(text='🔵', callback_data='blue')
         green = types.InlineKeyboardButton(text='🟢', callback_data='green')
         noneColor = types.InlineKeyboardButton(text='Любой цвет', callback_data='any')
-        markup.add(white, black, brown, green, blue, purple, yellow, orange, yellow, red,noneColor)
+        markup.add(white, black, brown, green, blue, purple, yellow, orange, red,noneColor)
         client.send_message(message.chat.id, 'Выберете цвет', reply_markup=markup)
     elif message.text == '🙎‍♂/️🙍‍♀ Пол':
         markup = types.InlineKeyboardMarkup()
@@ -89,37 +84,30 @@ def selectColor(message):
                    size44,size445,size45,size455,size46,size465)
         client.send_message(message.chat.id, 'Выберете раземер 📏', reply_markup=markup)
     elif message.text == '💵 Цена️':
-        Client.priceLow = client.send_message(message.chat.id, 'Введите нижний порог цены ⬇️')
-        client.register_next_step_handler(Client.priceLow, lowPrice)
+        priceLow = client.send_message(message.chat.id, 'Введите нижний порог цены ⬇️')
+        client.register_next_step_handler(priceLow, lowPrice)
 def lowPrice(message):
-        Client.priceLow = message.text
-        Client.priceHigh = client.send_message(message.chat.id, 'Введите верхний порог цены ⬆️')
-        client.register_next_step_handler(Client.priceHigh,highPrice)
+        Database.changeParams(self=Database,id=message.chat.id, param='priceLow', value=message.text)
+        priceHigh = client.send_message(message.chat.id, 'Введите верхний порог цены ⬆️')
+        client.register_next_step_handler(priceHigh,highPrice)
 def highPrice(message):
-        Client.priceHigh = message.text
-        print(Client.priceHigh)
+        Database.changeParams(self=Database,id=message.chat.id, param='priceHigh', value=message.text)
+        print(message.text)
 
 @client.callback_query_handler(func=lambda call: True)
 def genderSelect(call):
     if (call.data == '1'):
-        Client.gender = 1
+        Database.changeParams(self=Database,id=call.message.chat.id, param='gender', value=1)
         return
     elif(call.data == '0'):
-        Client.gender = 0
+        Database.changeParams(self=Database,id=call.message.chat.id, param='gender', value=0)
         return
     elif(call.data in FarfetchArrayParams.colors):
-        Client.color = call.data
+        Database.changeParams(self=Database,id=call.message.chat.id, param='color', value=call.data)
         return
     elif (call.data in FarfetchArrayParams.brands):
-        barnd = call.data
-        Client.brand = barnd
+        Database.changeParams(self=Database,id=call.message.chat.id, param='brand', value=call.data)
         return
     elif (37 <= float(call.data) <= 46.5):
-        try:
-            Client.size = int(call.data)
-        except:
-            Client.size = float(call.data)
-
-
-
+        Database.changeParams(self=Database,id=call.message.chat.id, param='size', value=call.data)
 client.polling(none_stop=True, interval=0)
